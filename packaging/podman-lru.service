@@ -1,0 +1,29 @@
+[Unit]
+Description=Evict least recently used podman images to keep storage under budget
+Documentation=file:///usr/share/doc/podman-lru/USER.md
+Requires=podman.socket
+After=podman.socket network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+NotifyAccess=all
+EnvironmentFile=/etc/sysconfig/podman-lru
+Environment=PODMAN_SYSTEMD_UNIT=%n
+Restart=always
+RestartSec=10
+TimeoutStartSec=300
+TimeoutStopSec=30
+ExecStartPre=-/usr/bin/podman pull ${PODMAN_LRU_REGISTRY}/${PODMAN_LRU_IMAGE}
+ExecStartPre=-/usr/bin/podman rm -f --ignore podman-lru
+ExecStart=/usr/bin/podman run --rm --replace --name podman-lru \
+    --sdnotify=conmon \
+    --log-driver=journald \
+    --env-file /etc/sysconfig/podman-lru \
+    --volume /run/podman/podman.sock:/run/podman/podman.sock \
+    --volume /var/lib/podman-lru:/state:Z \
+    ${PODMAN_LRU_REGISTRY}/${PODMAN_LRU_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore -t 10 podman-lru
+
+[Install]
+WantedBy=multi-user.target

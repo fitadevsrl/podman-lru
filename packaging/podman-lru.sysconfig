@@ -1,0 +1,25 @@
+# Configuration of the podman-lru service.
+# Read by systemd (image location) and passed to the container (PODMAN_LRU_* knobs).
+
+# Registry host serving the image. Point it at your company proxy if the build
+# host cannot reach Docker Hub, e.g. PODMAN_LRU_REGISTRY=registry.example.com/dockerhub
+PODMAN_LRU_REGISTRY=docker.io
+# Image path and tag below the registry host.
+PODMAN_LRU_IMAGE=fitadev/podman-lru:latest
+
+# Byte budget for all images. Decimal (KB, MB, GB, TB) or binary (KiB, MiB, GiB, TiB, K, M, G, T).
+PODMAN_LRU_MAX_SIZE=50GB
+
+# Period of the safety-net pass that re-lists images and enforces the budget
+# even when no event arrived.
+PODMAN_LRU_INTERVAL=60s
+
+# Regular expression; images with a name matching it are never evicted.
+# Uncomment and adapt, e.g. tool images that must stay available offline.
+#PODMAN_LRU_KEEP=pandoc|^localhost/tools/
+
+# Log what would be evicted without deleting anything.
+PODMAN_LRU_DRY_RUN=false
+
+# Log filter: error, warn, info, debug or trace.
+RUST_LOG=info
