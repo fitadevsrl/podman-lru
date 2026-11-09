@@ -2,8 +2,8 @@
 # Read by systemd (image location) and passed to the container (PODMAN_LRU_* knobs).
 
 # Registry host serving the image. Point it at your company proxy if the build
-# host cannot reach Docker Hub, e.g. PODMAN_LRU_REGISTRY=registry.example.com/dockerhub
-PODMAN_LRU_REGISTRY=docker.io
+# host cannot reach GitHub, e.g. PODMAN_LRU_REGISTRY=registry.example.com/ghcr
+PODMAN_LRU_REGISTRY=ghcr.io
 # Image path and tag below the registry host.
 PODMAN_LRU_IMAGE=fitadevsrl/podman-lru:latest
 

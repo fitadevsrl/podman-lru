@@ -8,7 +8,7 @@ images through the same socket.
 ## Installation on RHEL 8
 
 Requirements: podman 4.9 or later, systemd, and access to the registry that hosts
-the podman-lru image (Docker Hub by default).
+the podman-lru image (GitHub Container Registry, `ghcr.io`, by default).
 
 ```sh
 sudo dnf install ./podman-lru-0.1.0-1.el8.noarch.rpm
@@ -34,10 +34,10 @@ so systemd reports it active once the container runs.
 ### Using a registry proxy
 
 The image reference is `${PODMAN_LRU_REGISTRY}/${PODMAN_LRU_IMAGE}`. To pull
-through a company proxy or mirror, change only the registry part:
+through a company proxy or mirror of ghcr.io, change only the registry part:
 
 ```sh
-PODMAN_LRU_REGISTRY=registry.example.com/dockerhub-proxy
+PODMAN_LRU_REGISTRY=registry.example.com/ghcr-proxy
 PODMAN_LRU_IMAGE=fitadevsrl/podman-lru:0.1.0
 ```
 
@@ -53,7 +53,7 @@ Restart the service after editing it.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PODMAN_LRU_REGISTRY` | `docker.io` | registry host (and optional path) serving the image |
+| `PODMAN_LRU_REGISTRY` | `ghcr.io` | registry host (and optional path) serving the image |
 | `PODMAN_LRU_IMAGE` | `fitadevsrl/podman-lru:<version>` | image path and tag below the registry |
 | `PODMAN_LRU_MAX_SIZE` | `50GB` | byte budget for all images together, see units below |
 | `PODMAN_LRU_INTERVAL` | `60s` | period of the safety-net pass (re-list images, enforce budget) |
@@ -128,7 +128,7 @@ podman run -d --name podman-lru \
     -v /run/podman/podman.sock:/run/podman/podman.sock \
     -v podman-lru-state:/state \
     -e PODMAN_LRU_MAX_SIZE=50GB \
-    docker.io/fitadevsrl/podman-lru:latest
+    ghcr.io/fitadevsrl/podman-lru:latest
 ```
 
 Or build and run the binary directly: `cargo build --release` then
@@ -140,13 +140,13 @@ Or build and run the binary directly: `cargo build --release` then
 |---|---|
 | `make build` | static binary in `target/x86_64-unknown-linux-musl/release/` |
 | `make test` / `make lint` | unit tests; clippy and rustfmt |
-| `make image` | container image `docker.io/fitadevsrl/podman-lru:<version>` and `:latest` |
+| `make image` | container image `ghcr.io/fitadevsrl/podman-lru:<version>` and `:latest` |
 | `make rpm` | noarch RPM in `dist/`, built inside a Rocky Linux 8 container |
 | `make integration` | end-to-end test against podman 4.9.4 running in a container |
 
 `make rpm` packages the committed tree (`git archive HEAD`). Pass
 `rpmbuild --define 'image_ns myorg'` through the spec to change the default
-Docker Hub namespace.
+registry namespace.
 
 ## Releases
 
@@ -159,11 +159,13 @@ integration test, image build, RPM build) and publishes releases from tags
    Commit.
 2. Tag and push: `git tag v0.2.0 && git push origin main v0.2.0`.
 3. The `Release` workflow checks the tag matches both versions, pushes
-   `docker.io/fitadevsrl/podman-lru:0.2.0` and `:latest` to Docker Hub, builds
-   the RPM and attaches it to a GitHub release with generated notes.
+   `ghcr.io/fitadevsrl/podman-lru:0.2.0` and `:latest` to GitHub Container
+   Registry, builds the RPM and attaches it to a GitHub release with generated
+   notes.
 
-The repository needs two secrets: `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`
-(a Docker Hub access token with read and write scope on the `fitadevsrl`
-namespace). The release is downloadable from the GitHub Releases page; the
-RPM's default image tag is the released version, so a host installing it
-pulls exactly the image published alongside.
+No secrets are needed: the workflow authenticates with the built-in
+`GITHUB_TOKEN`. After the first release, make the package public once, in the
+organisation's Packages page, `podman-lru`, Package settings, Change visibility.
+Until then build hosts cannot pull it anonymously. The RPM's default image tag
+is the released version, so a host installing it pulls exactly the image
+published alongside.

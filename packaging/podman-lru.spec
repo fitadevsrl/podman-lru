@@ -1,5 +1,5 @@
-# Docker Hub namespace the default image comes from; override with
-# rpmbuild --define 'image_ns myorg' to ship a different default.
+# Registry namespace the default image comes from (ghcr.io/<image_ns>);
+# override with rpmbuild --define 'image_ns myorg' to ship a different default.
 %global image_ns fitadevsrl
 
 Name:           podman-lru
@@ -22,7 +22,8 @@ the libpod API socket and removes the least recently used images and
 intermediate layers whenever image storage exceeds a configured byte budget.
 
 This package installs the systemd unit and its configuration. The container
-image itself is pulled from the registry named in /etc/sysconfig/podman-lru.
+image itself is pulled from the registry named in /etc/sysconfig/podman-lru
+(GitHub Container Registry by default).
 
 %prep
 %autosetup
