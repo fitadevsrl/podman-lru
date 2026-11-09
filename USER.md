@@ -38,7 +38,7 @@ through a company proxy or mirror, change only the registry part:
 
 ```sh
 PODMAN_LRU_REGISTRY=registry.example.com/dockerhub-proxy
-PODMAN_LRU_IMAGE=fitadev/podman-lru:0.1.0
+PODMAN_LRU_IMAGE=fitadevsrl/podman-lru:0.1.0
 ```
 
 Then `sudo systemctl restart podman-lru`. The unit runs `podman pull` before each
@@ -54,7 +54,7 @@ Restart the service after editing it.
 | Variable | Default | Meaning |
 |---|---|---|
 | `PODMAN_LRU_REGISTRY` | `docker.io` | registry host (and optional path) serving the image |
-| `PODMAN_LRU_IMAGE` | `fitadev/podman-lru:<version>` | image path and tag below the registry |
+| `PODMAN_LRU_IMAGE` | `fitadevsrl/podman-lru:<version>` | image path and tag below the registry |
 | `PODMAN_LRU_MAX_SIZE` | `50GB` | byte budget for all images together, see units below |
 | `PODMAN_LRU_INTERVAL` | `60s` | period of the safety-net pass (re-list images, enforce budget) |
 | `PODMAN_LRU_KEEP` | unset | regular expression; an image with any name matching it is never evicted |
@@ -128,7 +128,7 @@ podman run -d --name podman-lru \
     -v /run/podman/podman.sock:/run/podman/podman.sock \
     -v podman-lru-state:/state \
     -e PODMAN_LRU_MAX_SIZE=50GB \
-    docker.io/fitadev/podman-lru:latest
+    docker.io/fitadevsrl/podman-lru:latest
 ```
 
 Or build and run the binary directly: `cargo build --release` then
@@ -140,10 +140,30 @@ Or build and run the binary directly: `cargo build --release` then
 |---|---|
 | `make build` | static binary in `target/x86_64-unknown-linux-musl/release/` |
 | `make test` / `make lint` | unit tests; clippy and rustfmt |
-| `make image` | container image `docker.io/fitadev/podman-lru:<version>` and `:latest` |
+| `make image` | container image `docker.io/fitadevsrl/podman-lru:<version>` and `:latest` |
 | `make rpm` | noarch RPM in `dist/`, built inside a Rocky Linux 8 container |
 | `make integration` | end-to-end test against podman 4.9.4 running in a container |
 
 `make rpm` packages the committed tree (`git archive HEAD`). Pass
 `rpmbuild --define 'image_ns myorg'` through the spec to change the default
 Docker Hub namespace.
+
+## Releases
+
+GitHub Actions builds every push and pull request (`CI`: lint, unit tests,
+integration test, image build, RPM build) and publishes releases from tags
+(`Release`):
+
+1. Bump the version in `Cargo.toml` (run `cargo build` to update `Cargo.lock`)
+   and in `packaging/podman-lru.spec` (`Version:` and a `%changelog` entry).
+   Commit.
+2. Tag and push: `git tag v0.2.0 && git push origin main v0.2.0`.
+3. The `Release` workflow checks the tag matches both versions, pushes
+   `docker.io/fitadevsrl/podman-lru:0.2.0` and `:latest` to Docker Hub, builds
+   the RPM and attaches it to a GitHub release with generated notes.
+
+The repository needs two secrets: `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`
+(a Docker Hub access token with read and write scope on the `fitadevsrl`
+namespace). The release is downloadable from the GitHub Releases page; the
+RPM's default image tag is the released version, so a host installing it
+pulls exactly the image published alongside.

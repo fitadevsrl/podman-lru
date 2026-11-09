@@ -1,13 +1,13 @@
 # Docker Hub namespace the default image comes from; override with
 # rpmbuild --define 'image_ns myorg' to ship a different default.
-%global image_ns fitadev
+%global image_ns fitadevsrl
 
 Name:           podman-lru
 Version:        0.1.0
 Release:        1%{?dist}
 Summary:        Evict least recently used podman images to keep storage under budget
 License:        MIT
-URL:            https://github.com/fita-dev/podman-lru
+URL:            https://github.com/fitadevsrl/podman-lru
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
 

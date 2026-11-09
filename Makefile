@@ -2,7 +2,7 @@
 
 NAME     := podman-lru
 VERSION  := $(shell sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
-IMAGE    ?= docker.io/fitadev/$(NAME)
+IMAGE    ?= docker.io/fitadevsrl/$(NAME)
 ENGINE   ?= $(shell command -v podman 2>/dev/null || command -v docker)
 TARGET   := x86_64-unknown-linux-musl
 PODMAN_TEST_IMAGE ?= quay.io/podman/stable:v4.9.4

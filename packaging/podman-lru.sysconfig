@@ -5,7 +5,7 @@
 # host cannot reach Docker Hub, e.g. PODMAN_LRU_REGISTRY=registry.example.com/dockerhub
 PODMAN_LRU_REGISTRY=docker.io
 # Image path and tag below the registry host.
-PODMAN_LRU_IMAGE=fitadev/podman-lru:latest
+PODMAN_LRU_IMAGE=fitadevsrl/podman-lru:latest
 
 # Byte budget for all images. Decimal (KB, MB, GB, TB) or binary (KiB, MiB, GiB, TiB, K, M, G, T).
 PODMAN_LRU_MAX_SIZE=50GB
