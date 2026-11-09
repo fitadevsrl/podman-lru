@@ -1,31 +1,38 @@
-# Podman LRU cleanup policy
+# podman-lru
 
-The purpose of this tool is to run as a daemon on a build host and remove the least recently used images or layers.
+Least-recently-used eviction of podman images for build hosts.
 
-The build host mostly builds images, it doesn't run containers, or very rarely.
-So an image or layer must be considered used when it's built and when an image depending on it is built.
+podman-lru runs as a container next to podman, follows `podman events` through
+the libpod API socket, remembers when each image and cached layer was last used,
+and removes the least recently used ones whenever image storage exceeds a byte
+budget. It targets podman 4.9 on RHEL 8 and ships as a noarch RPM that pulls and
+runs the container image.
 
-The build host will have a maximum disk size allocated to images.
+See [USER.md](USER.md) for installation, configuration and behaviour, and the
+[backlog](backlog/) for pending work.
 
-## docuum
+## Why not docuum
 
-docuum would have been the perfect solution if it was compatible with podman.
+[docuum](https://github.com/stepchowfun/docuum) does exactly this for Docker but
+not for podman: podman's Docker-compatible socket is reported brittle, and podman
+does not record when a layer was last used, so docuum would start blind.
 
-Unfortunately, it's made for docker and not podman.
-While podman has a compatibility layer supporting the docker socket API, it has been reported it's very brittle.
-Furthermore, docker stores when a layer was used, podman doesn't.
-Thus, when docuum starts, it knows when the layers were used, podman doesn't.
+Our case is simpler than the general one. The build host builds images and
+rarely runs containers (tools such as pandoc). Images we build are not used after
+the build; only third-party bases are reused. Hosts that go idle drop all their
+images. So podman-lru treats every image present at startup as used right now,
+counts builds, pulls and container creations as uses of the image and its whole
+parent chain, and evicts from the leaves inward.
 
-But we can still make this work as our use case is quite simple.
-Indeed, the images we build are never used after the build (only third-party bases are reused) and we don't run containers there (except for
-tools like pandoc).
-Also, whenever a build host goes idle, we delete all images.
-So when this new tool starts, simply consider all present images/layers were used right now; most likely there won't be any.
+## Design in short
 
-The tool should run inside a container.
-It will be fed by `podman events` running outside the container.
-I envision podman events piped into a socket mounted in the tool container.
-Maybe you have a better idea.
-It must be installed using a RPM.
-Podman on build host has version 4.9.4-rhel.
-Build host is RHEL 8.
+- **Events, not polling**: `GET /libpod/events?stream=true` pushes one JSON line per
+  event over a long-lived response. Image lists are refreshed only after an event
+  that may have changed them, on reconnect and on a periodic safety net.
+- **Layers are images**: with `podman build --layers`, cached steps are dangling
+  images linked by `ParentId`. Using an image touches its ancestors, and an image
+  with children is never a candidate, so parents outlive children.
+- **Budget from podman**: `GET /libpod/system/df` gives the images total with shared
+  layers counted once; eviction stops as soon as it fits.
+- **Host side is thin**: a systemd unit, a sysconfig file and a state directory.
+  The daemon is a static Rust binary in a `FROM scratch` image.
